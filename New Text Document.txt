@@ -1,0 +1,46 @@
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt'); // Import bcrypt for hashing passwords
+
+const userSchema = new mongoose.Schema({
+  bankname: {
+    type: String,
+    required: true
+  },
+  phonenumber: {
+    type: String,
+    required: true,
+    validate: {
+      validator: function(v) {
+        return /^\d{10}$/.test(v); // Ensures phone number is exactly 10 digits
+      },
+      message: props => `${props.value} is not a valid phone number!`
+    }
+  },
+  mail: {
+    type: String,
+    required: true,
+    unique: true,
+    validate: {
+      validator: function(v) {
+        return /^([a-zA-Z0-9_\.-]+)@([a-zA-Z0-9_\.-]+)\.([a-zA-Z]{2,6})$/.test(v); // Email regex validation
+      },
+      message: props => `${props.value} is not a valid email address!`
+    }
+  },
+  password: {
+    type: String,
+    required: true
+  }
+});
+
+// Pre-save hook to hash the password before saving
+userSchema.pre('save', async function(next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10); // Hash password with bcrypt
+  }
+  next();
+});
+
+// Create and export the User model
+const UserModel = mongoose.model('User', userSchema);
+module.exports = UserModel;
